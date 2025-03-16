@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-backend
+  labels:
+    app: auth-service-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service-backend
+  template:
+    metadata:
+      labels:
+        app: auth-service-backend
+    spec:
+      containers:
+      - name: auth-service
+        image: localhost:5000/auth-service-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.1"
+            memory: "128Mi"
+        env:
+        - name: PORT
+          value: "8081"
+        - name: KEYCLOAK_ISSUER
+          valueFrom:
+            configMapKeyRef:
+              name: auth-service-config
+              key: keycloak_issuer
+        - name: ALLOWED_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: auth-service-config
+              key: allowed_origins
+        - name: KEYCLOAK_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secret
+              key: keycloak_public_key
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: config-volume
+        configMap:
+          name: auth-service-casbin-config

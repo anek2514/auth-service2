@@ -1,0 +1,3 @@
+# policy.csv
+p, admin, /api/data, GET
+p, teacher, /api/data, GET
